@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบขออนุมัติเรียนปฏิบัติการฟิสิกส์ชดเชย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Prompt', sans-serif; } </style>
+    <!-- ไลบรารีสำหรับแปลง HTML เป็นรูปภาพ JPG -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen py-8 px-4">
+
+    <!-- แถบนำทางด้านบน -->
+    <div class="max-w-6xl mx-auto flex justify-between items-center mb-6">
+        <span class="text-sm font-semibold text-slate-500">ภาควิชาฟิสิกส์ คณะวิทยาศาสตร์</span>
+        <button onclick="toggleView()" id="btnToggle" class="text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-4 rounded-lg font-medium transition shadow-sm">
+            🔒 เข้าสู่ระบบ Admin
+        </button>
+    </div>
+
+    <!-- ================= 1. ส่วนของนักศึกษา (FORM) ================= -->
+    <div id="studentSection" class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+        <div class="bg-indigo-600 px-8 py-6 text-white text-center">
+            <h1 class="text-2xl font-bold">คำร้องขอเรียนปฏิบัติการฟิสิกส์ชดเชย</h1>
+            <p class="text-indigo-100 text-sm mt-1">คณะวิทยาศาสตร์ มหาวิทยาลัยศิลปากร</p>
+        </div>
+
+        <form id="makeupForm" class="p-8 space-y-6">
+            <!-- รหัสและชื่อ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">รหัสนักศึกษา *</label>
+                    <input type="text" id="studentId" required placeholder="เช่น 690710001" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <span id="idStatus" class="text-xs mt-1 block"></span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ - นามสกุล *</label>
+                    <input type="text" id="studentName" required placeholder="นายนพรัตน์ พวงยิ้มน้อย" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+
+            <!-- อีเมล -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+  อีเมลมหาวิทยาลัย <span class="text-red-500">*</span>
+</label>
+<input 
+  type="email" 
+  id="studentEmail" 
+  name="studentEmail" 
+  required
+  pattern="^[a-zA-Z]+_[a-zA-Z][0-9]?@(su\.ac\.th|silpakorn\.edu)$"
+  title="รูปแบบอีเมลไม่ถูกต้อง (ต้องเป็น นามสกุล_อักษรชื่อแรก@silpakorn.edu เช่น surname_n@silpakorn.edu)"
+  placeholder="เช่น surname_n@silpakorn.edu"
+  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+<small class="text-gray-500 text-xs mt-1 block">
+  ⚠️ ผลการอนุมัติจะส่งไปยังอีเมลนี้ กรุณาตรวจสอบตัวสะกดให้ถูกต้อง
+</small>
+                <div class="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-800 leading-relaxed">
+                    💡 <b>คำแนะนำ:</b> นักศึกษาสามารถตรวจสอบวันเวลาเรียนและกลุ่มเรียนของตนเองได้ที่: 
+                    <a href="https://noparatoad.github.io/searchlabphy/" target="_blank" class="underline font-bold text-blue-600 hover:text-blue-800">
+                        https://noparatoad.github.io/searchlabphy/
+                    </a>
+                </div>
+            </div>
+
+            <!-- รายวิชาและวันเรียนปกติ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">รายวิชาที่เรียน *</label>
+                    <select id="subject" required onchange="onSubjectChange()" class="w-full px-4 py-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- รายวิชา --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">วัน/กลุ่มเรียนปกติ *</label>
+                    <select id="regularSlot" required onchange="onRegularSlotChange()" class="w-full px-4 py-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- วันเรียนปกติ --</option>
+                        <option value="จันทร์ 09:25-12:05">จันทร์ 09:25-12:05</option>
+                        <option value="จันทร์ 13:00-15:40">จันทร์ 13:00-15:40</option>
+                        <option value="อังคาร 13:00-15:40">อังคาร 13:00-15:40</option>
+                        <option value="พุธ 13:00-15:40">พุธ 13:00-15:40</option>
+                        <option value="พฤหัส 13:00-15:40">พฤหัส 13:00-15:40</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- การทดลองที่ขาด (ผูกกับวิชา) -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">การทดลองที่ขาดเรียน *</label>
+                <select id="experimentName" required onchange="onExperimentChange()" disabled class="w-full px-4 py-2 border rounded-lg bg-slate-100 outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- กรุณาเลือกรายวิชาก่อน --</option>
+                </select>
+            </div>
+
+            <!-- วันที่ขาดและสาเหตุ -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่ขาดเรียน *</label>
+                <input type="date" id="absentDate" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">สาเหตุที่ขาดเรียน *</label>
+                <textarea id="reason" rows="2" required placeholder="ระบุเหตุผล เช่น ป่วย มีใบรับรองแพทย์ หรือติดราชการทางมหาวิทยาลัย" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+
+            <!-- แนบไฟล์ -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">เอกสารหรือรูปรับรองการขาดเรียน (หากมี)</label>
+                <input type="file" id="proofFile" accept="image/*,.pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                <p class="text-xs text-slate-400 mt-1">* หากไม่มีเอกสารแนบ อาจารย์จะพิจารณาความเหมาะสมจากสาเหตุที่ระบุ</p>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- รอบชดเชยที่ตรงกับการทดลอง -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">เลือกรอบวันและเวลาที่ต้องการเรียนชดเชย *</label>
+                <select id="makeupSlot" required disabled class="w-full px-4 py-2 border border-indigo-200 bg-slate-100 rounded-lg outline-none font-medium focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- กรุณาเลือกการทดลองที่ขาดก่อน --</option>
+                </select>
+                <p class="text-xs text-slate-400 mt-1">* ระบบจะแสดงเฉพาะรอบที่เปิดทำการทดลองนี้และยังมีที่นั่งว่างเท่านั้น</p>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
+                ยืนยันการขออนุมัติเรียนชดเชย ตรวจสอบผลได้ทางอีเมล
+            </button>
+        </form>
+    </div>
+
+    <!-- ================= 2. ส่วนของผู้ดูแลระบบ (ADMIN) ================= -->
+    <div id="adminSection" class="max-w-6xl mx-auto hidden">
+        <!-- ฟอร์มเข้าสู่ระบบ Admin -->
+        <div id="adminLoginForm" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-100 text-center">
+            <h2 class="text-xl font-bold text-slate-800 mb-1">เข้าสู่ระบบผู้ดูแล (Admin)</h2>
+            <p class="text-slate-400 text-xs mb-5">ใช้บัญชีและรหัสผ่านจากแท็บ Admins</p>
+            
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="adminUser" placeholder="เช่น admin1" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-slate-700">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่าน (Password)</label>
+                    <input type="password" id="adminPassword" placeholder="ใส่รหัสผ่าน" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-slate-700">
+                </div>
+                <button onclick="loginAdmin()" id="btnLogin" class="w-full mt-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg font-medium transition shadow">
+                    เข้าสู่ระบบ
+                </button>
+            </div>
+        </div>
+
+        <!-- หน้าแดชบอร์ด Admin -->
+        <div id="adminDashboard" class="hidden bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+            <div class="p-6 bg-slate-800 text-white flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h2 class="text-xl font-bold">ระบบตรวจสอบคำร้องขอเรียนชดเชย</h2>
+                    <p class="text-slate-400 text-sm mt-0.5">เข้าสู่ระบบโดย: <b id="displayAdminName" class="text-emerald-400">-</b></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="fetchAdminData()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition shadow">
+                        🔄 รีเฟรชข้อมูล
+                    </button>
+                    <button onclick="logoutAdmin()" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg text-sm font-medium transition shadow">
+                        ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+
+                        <!-- แถบแสดงจำนวนเรื่องทั้งหมด + สรุปสถานะ -->
+            <div class="px-6 py-3 bg-indigo-50/60 border-b border-indigo-100 flex flex-wrap items-center gap-3 text-xs">
+                <span class="font-semibold text-slate-700">📊 ภาพรวมคำร้อง:</span>
+                <span class="bg-indigo-600 text-white px-2.5 py-1 rounded-full font-medium shadow-sm">
+                    ทั้งหมด: <b id="totalCount">0</b> เรื่อง
+                </span>
+                <span class="bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
+                    รออนุมัติ: <b id="pendingCount">0</b>
+                </span>
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
+                    อนุมัติแล้ว: <b id="approvedCount">0</b>
+                </span>
+                <span class="bg-rose-100 text-rose-800 border border-rose-200 px-2.5 py-1 rounded-full font-medium">
+                    ไม่อนุมัติ: <b id="rejectedCount">0</b>
+                </span>
+            </div>
+
+            <!-- ตัวกรองข้อมูล -->
+            <div class="p-4 bg-slate-50 border-b flex flex-wrap gap-4 items-center text-sm">
+                <span class="font-medium text-slate-700">กรองสถานะ:</span>
+                <select id="filterStatus" onchange="filterAdminTable()" class="px-3 py-1.5 border rounded-lg bg-white outline-none">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="รออนุมัติ">รออนุมัติ</option>
+                    <option value="อนุมัติ">อนุมัติแล้ว</option>
+                    <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+                </select>
+                <input type="text" id="searchBox" onkeyup="filterAdminTable()" placeholder="ค้นหาด้วยชื่อ หรือรหัสนักศึกษา..." class="px-3 py-1.5 border rounded-lg bg-white outline-none flex-1 min-w-[200px]">
+            </div>
+
+            <div class="overflow-x-auto p-4">
+                <table class="w-full text-left text-sm text-slate-600 border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-xs border-b">
+                        <tr>
+                            <th class="p-3 text-center w-12">ลำดับ</th>
+                            <th class="p-3">วันที่ยื่น</th>
+                            <th class="p-3">รหัส</th>
+                            <th class="p-3">ชื่อ-สกุล</th>
+                            <th class="p-3">วิชา/การทดลอง</th>
+                            <th class="p-3">รอบชดเชย</th>
+                            <th class="p-3">หลักฐาน</th>
+                            <th class="p-3">สถานะ</th>
+                            <th class="p-3">ผู้ดำเนินการ</th>
+                            <th class="p-3 text-center">จัดการ</th>
+                            <th class="p-3 text-center">ใบแสดงผล</th>
+                            <th class="p-3 text-center">สถานะ DataBase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="12" class="text-center p-6 text-slate-400">กำลังโหลด...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-8">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-slate-600 text-sm text-center sm:text-left">หากพบปัญหาแจ้งที่ Line Official LabPhysics</p>
+      <a href="https://lin.ee/Q5FokRl" target="_blank" rel="noopener noreferrer" 
+         class="inline-flex items-center gap-2 bg-[#06C755] hover:bg-[#05b34c] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M24 10.3c0-4.8-4.9-8.7-11-8.7S2 5.5 2 10.3c0 4.3 3.9 7.9 9.2 8.6.4.1.9.3 1 .7.1.4.1 1 0 1.4-.2.8-.7 3.1-.7 3.3 0 .4.3.7.8.4 2.8-1.7 7.7-4.6 10.4-7.9 1.5-1.8 2.3-3.9 2.3-6.1z"/>
+        </svg>
+        เพิ่มเพื่อน LINE Official
+      </a>
+    </div>
+  </footer>
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+
+       const GAS_URL = "https://script.google.com/macros/s/AKfycbzhTnq0lRjbvNE3_HB0DaXvTqDMFgJvgrSiAXYerGjKG_3HX9LbHMWGztgXNz2ev49hgQ/exec"; // <-- ใส่ URL ของคุณ
+
+// ตัวช่วยเรียก Apps Script (ห้ามใส่ headers Content-Type เอง ไม่เช่นนั้นจะติด CORS preflight)
+async function callApi(action, payload = {}) {
+  const res = await fetch(GAS_URL, {
+    method: "POST",
+    redirect: "follow",
+    body: JSON.stringify({ action, ...payload })
+  });
+  return await res.json();
+}
+
+        let allSchedules = [];
+        let adminToken = "";
+        let rawAdminData = [];
+
+        // โหลดข้อมูลโครงสร้างการทดลองและรอบชดเชยจากแท็บ Schedules
+window.addEventListener('load', function() {
+    callApi('getSchedules')
+        .then(res => {
+            allSchedules = res.schedules || [];
+            initSubjectDropdown();
+        })
+        .catch(() => {
+            allSchedules = [];
+            initSubjectDropdown();
+        });
+});
+
+let lastFetchedId = "";
+
+document.getElementById('studentId').addEventListener('blur', fetchStudentData);
+document.getElementById('studentId').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        fetchStudentData();
+    }
+});
+
+// ตั้งค่า <select> ให้ตรงกับค่าที่ได้จากฐานข้อมูล
+// - เทียบแบบตัดช่องว่าง/ขีดชนิดต่างๆ
+// - allowCodeMatch = true จะจับคู่ด้วยรหัสวิชา (คำแรก) ด้วย
+// - ถ้าไม่พบ จะเพิ่มเป็นตัวเลือกใหม่ เพื่อให้ข้อมูลยังถูกเลือกและส่งได้
+function setSelectValue(selectEl, value, allowCodeMatch) {
+    if (!value) return false;
+    const norm = s => s.toString().replace(/\s+/g, '').replace(/[–—−]/g, '-');
+    const target = norm(value);
+
+    for (const opt of selectEl.options) {
+        if (opt.value && norm(opt.value) === target) {
+            selectEl.value = opt.value;
+            return true;
+        }
+    }
+    if (allowCodeMatch) {
+        const code = value.toString().trim().split(/\s+/)[0];
+        for (const opt of selectEl.options) {
+            if (opt.value && opt.value.trim().split(/\s+/)[0] === code) {
+                selectEl.value = opt.value;
+                return true;
+            }
+        }
+    }
+    const newOpt = document.createElement('option');
+    newOpt.value = value;
+    newOpt.textContent = value;
+    selectEl.appendChild(newOpt);
+    selectEl.value = value;
+    return true;
+}
+
+function fetchStudentData() {
+    const studentId = document.getElementById('studentId').value.trim();
+    const statusText = document.getElementById('idStatus');
+    const nameInput = document.getElementById('studentName');
+    const emailInput = document.getElementById('studentEmail');
+    const subjectSelect = document.getElementById('subject');
+    const slotSelect = document.getElementById('regularSlot');
+
+    if (!studentId || studentId.length < 9) return;
+    if (studentId === lastFetchedId) return;   // กันเรียกซ้ำ (Enter + blur)
+    lastFetchedId = studentId;
+
+    statusText.className = "text-xs text-indigo-500 mt-1 block";
+    statusText.innerText = "⏳ กำลังค้นหาข้อมูล...";
+
+        callApi('getStudentInfo', { studentId: studentId })
+        .then(function(res) {
+            if (res.success) {
+                if (res.name) nameInput.value = res.name;
+                if (res.email) emailInput.value = res.email;
+
+                if (res.subject) {
+                    setSelectValue(subjectSelect, res.subject, true);
+                    onSubjectChange();
+                }
+                if (res.regularSlot) {
+                    setSelectValue(slotSelect, res.regularSlot, false);
+                    onRegularSlotChange();
+                }
+
+                statusText.className = "text-xs text-emerald-600 mt-1 block";
+                if (res.subject && res.regularSlot) {
+                    statusText.innerText = "✓ พบข้อมูลนักศึกษา (ชื่อ อีเมล รายวิชา และกลุ่มเรียน) เรียบร้อย";
+                } else {
+                    statusText.className = "text-xs text-amber-600 mt-1 block";
+                    statusText.innerText = "✓ พบข้อมูลนักศึกษา แต่รายวิชา/กลุ่มเรียนไม่ครบ กรุณาเลือกเพิ่มเอง";
+                }
+            } else {
+                lastFetchedId = "";
+                statusText.className = "text-xs text-amber-600 mt-1 block";
+                statusText.innerText = "⚠️ ไม่พบข้อมูลในระบบ กรุณากรอกด้วยตนเอง";
+            }
+        })
+        .catch(function(err) {
+            lastFetchedId = "";
+            statusText.className = "text-xs text-rose-500 mt-1 block";
+            statusText.innerText = "เกิดข้อผิดพลาดในการดึงข้อมูล";
+        });
+}
+
+        // สร้างรายชื่อวิชาที่ไม่ซ้ำกัน
+        function initSubjectDropdown() {
+            const subjectSelect = document.getElementById('subject');
+            const currentSubject = subjectSelect.value;   // <-- เพิ่มบรรทัดนี้
+            const subjects = [...new Set(allSchedules.map(item => item.subject))];
+            
+            subjectSelect.innerHTML = '<option value="">-- เลือกรายวิชา --</option>';
+            if (subjects.length === 0) {
+                // รายวิชาพื้นฐานหากในชีต Schedules ยังไม่ได้ใส่ข้อมูล
+                const defaults = [
+                    "514103 ปฏิบัติการฟิสิกส์ทั่วไป 1",
+                    "514108 ปฏิบัติการฟิสิกส์พื้นฐาน",
+                    "514111 ปฏิบัติการฟิสิกส์ทั่วไปสำหรับวิศวกรวัสดุ",
+                    "514113 ปฏิบัติการฟิสิกส์พื้นฐานสำหรับวิศวกรรมอุตสาหการ",
+                    "514104 ปฏิบัติการฟิสิกส์ทั่วไป 2",
+                    "514106 ปฏิบัติการฟิสิกส์ทั่วไป"
+                ];
+                defaults.forEach(sub => {
+                    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+                });
+            } else {
+                subjects.forEach(sub => {
+                    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+                });
+            }
+            if (currentSubject) {
+        setSelectValue(subjectSelect, currentSubject, true);
+        onSubjectChange();
+    }
+        }
+
+        // เมื่อนักศึกษาเลือกวิชา -> โหลดชื่อการทดลองที่ตรงกับวิชานั้น
+        function onSubjectChange() {
+            const selectedSubject = document.getElementById('subject').value;
+            const expSelect = document.getElementById('experimentName');
+            const makeupSelect = document.getElementById('makeupSlot');
+
+            // รีเซ็ตรอบชดเชย
+            makeupSelect.innerHTML = '<option value="">-- กรุณาเลือกการทดลองที่ขาดก่อน --</option>';
+            makeupSelect.disabled = true;
+            makeupSelect.className = makeupSelect.className.replace('bg-white', 'bg-slate-100');
+
+            if (!selectedSubject) {
+                expSelect.innerHTML = '<option value="">-- กรุณาเลือกรายวิชาก่อน --</option>';
+                expSelect.disabled = true;
+                expSelect.className = expSelect.className.replace('bg-white', 'bg-slate-100');
+                return;
+            }
+
+            const matchedExps = [...new Set(
+                allSchedules.filter(item => item.subject === selectedSubject).map(item => item.experiment)
+            )];
+
+            if (matchedExps.length === 0) {
+                expSelect.innerHTML = '<option value="">-- ไม่พบการทดลองที่เปิดในวิชานี้ --</option>';
+                expSelect.disabled = true;
+                return;
+            }
+
+            expSelect.innerHTML = '<option value="">-- เลือกการทดลองที่ขาดเรียน --</option>';
+            matchedExps.forEach(exp => {
+                expSelect.innerHTML += `<option value="${exp}">${exp}</option>`;
+            });
+            expSelect.disabled = false;
+            expSelect.className = expSelect.className.replace('bg-slate-100', 'bg-white');
+        }
+// ================= ตัดรอบชดเชยที่ตรงกับวัน/กลุ่มเรียนปกติ =================
+const DAY_KEYWORDS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"]; // index = Date.getDay()
+
+// ดึงชื่อวันจากข้อความ -> คืน 0-6 (0=อาทิตย์) หรือ -1 ถ้าไม่พบ
+function extractDayIndex(text) {
+    if (!text) return -1;
+    for (let i = 0; i < DAY_KEYWORDS.length; i++) {
+        if (text.indexOf(DAY_KEYWORDS[i]) !== -1) return i;
+    }
+    return -1;
+}
+
+// ดึงช่วงเวลา เช่น "13:00-15:40" -> คืนเป็นสตริงมาตรฐาน "13:00-15:40" หรือ null
+function extractTimeRange(text) {
+    if (!text) return null;
+    const m = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—−ถึง]+\s*(\d{1,2})[:.](\d{2})/);
+    if (!m) return null;
+    const pad = n => n.toString().padStart(2, '0');
+    return `${pad(m[1])}:${m[2]}-${pad(m[3])}:${m[4]}`;
+}
+
+// ดึงวันที่จากข้อความ (รองรับ dd/mm/yyyy และ "25 มี.ค. 68") -> คืน Date หรือ null
+function extractDateFromText(text) {
+    if (!text) return null;
+    const thaiMonths = {
+        "ม.ค.": 0, "ก.พ.": 1, "มี.ค.": 2, "เม.ย.": 3, "พ.ค.": 4, "มิ.ย.": 5,
+        "ก.ค.": 6, "ส.ค.": 7, "ก.ย.": 8, "ต.ค.": 9, "พ.ย.": 10, "ธ.ค.": 11,
+        "มกราคม": 0, "กุมภาพันธ์": 1, "มีนาคม": 2, "เมษายน": 3, "พฤษภาคม": 4, "มิถุนายน": 5,
+        "กรกฎาคม": 6, "สิงหาคม": 7, "กันยายน": 8, "ตุลาคม": 9, "พฤศจิกายน": 10, "ธันวาคม": 11
+    };
+    const fixYear = y => {
+        if (y < 100) y += 2500;      // 68 -> 2568
+        if (y > 2500) y -= 543;      // พ.ศ. -> ค.ศ.
+        return y;
+    };
+    let m = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (m) return new Date(fixYear(parseInt(m[3], 10)), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+
+    m = text.match(/(\d{1,2})\s+([ก-๙\.]+)\s+(\d{2,4})/);
+    if (m && thaiMonths[m[2]] !== undefined) {
+        return new Date(fixYear(parseInt(m[3], 10)), thaiMonths[m[2]], parseInt(m[1], 10));
+    }
+    return null;
+}
+
+// รอบชดเชย "ชนกับ" วัน/กลุ่มเรียนปกติหรือไม่ (true = ชน -> ห้ามเลือก)
+function isSameAsRegularSlot(slotText, regularSlot) {
+    const regDay = extractDayIndex(regularSlot);
+    const regTime = extractTimeRange(regularSlot);
+    if (regDay === -1 || !regTime) return false;   // ยังไม่ได้เลือกกลุ่มเรียนปกติ -> ไม่ตัด
+
+    let slotDay = extractDayIndex(slotText);
+    if (slotDay === -1) {
+        const d = extractDateFromText(slotText);   // ไม่มีชื่อวัน -> คำนวณจากวันที่
+        if (d) slotDay = d.getDay();
+    }
+    const slotTime = extractTimeRange(slotText);
+
+    return slotDay === regDay && slotTime === regTime;
+}
+
+// เมื่อเปลี่ยนวัน/กลุ่มเรียนปกติ -> คำนวณรายการรอบชดเชยใหม่ (ถ้าเลือกการทดลองไว้แล้ว)
+function onRegularSlotChange() {
+    if (document.getElementById('experimentName').value) {
+        onExperimentChange();
+    }
+}
+
+
+// ตั้งค่า: ต้องส่งคำร้องล่วงหน้าก่อนเวลาเริ่มอย่างน้อยกี่นาที 1440 = 1 วัน (0 = ตัดเมื่อถึงเวลาเริ่ม)
+const SLOT_CUTOFF_MINUTES = 1440;
+
+// true = รอบนี้เลยวัน/เวลาปัจจุบันไปแล้ว (เทียบตามเวลาประเทศไทย UTC+7)
+// รอบที่ระบุแค่ชื่อวัน เช่น "อังคาร 13:00-15:40" (ไม่มีวันที่) จะไม่ถูกตัด เพราะระบุวันที่จริงไม่ได้
+function isSlotExpired(slotText) {
+    const d = extractDateFromText(slotText);
+    if (!d) return false;
+
+    // ใช้เวลาเริ่มต้นของรอบ ถ้าไม่มีเวลาให้ถือว่าหมดเขตสิ้นวัน 23:59
+    let hour = 23, minute = 59;
+    const range = extractTimeRange(slotText);
+    if (range) {
+        hour = parseInt(range.substring(0, 2), 10);
+        minute = parseInt(range.substring(3, 5), 10);
+    } else {
+        const single = (slotText || "").match(/(\d{1,2})[:.](\d{2})/);
+        if (single) {
+            hour = parseInt(single[1], 10);
+            minute = parseInt(single[2], 10);
+        }
+    }
+
+    // แปลงเวลาไทย -> UTC (ลบ 7 ชม.) เพื่อไม่ให้ขึ้นกับโซนเวลาของเครื่อง
+    const slotMs = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour - 7, minute);
+    return slotMs - SLOT_CUTOFF_MINUTES * 60000 <= Date.now();
+}
+// เมื่อนักศึกษาเลือกการทดลอง -> ดึงรอบชดเชยที่ยังไม่เต็ม และ "ยังไม่หมดเวลา/ไม่เลยวัน"
+function onExperimentChange() {
+    const selectedExp = document.getElementById('experimentName').value;
+    const regularSlot = document.getElementById('regularSlot').value;
+    const makeupSelect = document.getElementById('makeupSlot');
+
+    if (!selectedExp) {
+        makeupSelect.innerHTML = '<option value="">-- กรุณาเลือกการทดลองที่ขาดก่อน --</option>';
+        makeupSelect.disabled = true;
+        makeupSelect.className = makeupSelect.className.replace('bg-white', 'bg-slate-100');
+        return;
+    }
+
+    const availableSlots = allSchedules.filter(item => item.experiment === selectedExp);
+
+    if (availableSlots.length === 0) {
+        makeupSelect.innerHTML = '<option value="">-- ไม่พบรอบเปิดสำหรับการทดลองนี้ในระบบ --</option>';
+        makeupSelect.disabled = true;
+        return;
+    }
+
+    makeupSelect.innerHTML = '<option value="">-- เลือกรอบที่ต้องการชดเชย (ข้ามรายวิชาได้) --</option>';
+    let hasOpenSeat = false;
+    let removedBySameSlot = 0;
+
+    availableSlots.forEach(slot => {
+        const subCode = slot.subject.split(" ")[0];
+
+        // 1) ตัดรอบที่เลยเวลาไปแล้ว
+        if (isSlotExpired(slot.slotText)) return;
+
+        // 2) ตัดรอบที่ตรงกับวัน/เวลากลุ่มเรียนปกติของนักศึกษา
+        if (isSameAsRegularSlot(slot.slotText, regularSlot)) {
+            removedBySameSlot++;
+            return;
+        }
+
+        if (slot.remain > 0) {
+            hasOpenSeat = true;
+            makeupSelect.innerHTML += `<option value="${slot.slotText} (${subCode})">${slot.slotText} [คาบวิชา: ${subCode}] (ว่าง ${slot.remain} ที่)</option>`;
+        } else {
+            makeupSelect.innerHTML += `<option value="" disabled class="text-rose-400">${slot.slotText} [คาบวิชา: ${subCode}] (เต็มแล้ว)</option>`;
+        }
+    });
+
+    if (!hasOpenSeat) {
+        const msg = removedBySameSlot > 0
+            ? '-- ไม่มีรอบชดเชยที่เลือกได้ (รอบที่เหลือตรงกับเวลาเรียนปกติของคุณ) --'
+            : '-- ไม่มีรอบชดเชยที่เปิดให้ลงทะเบียนในขณะนี้ --';
+        makeupSelect.innerHTML = `<option value="">${msg}</option>`;
+        makeupSelect.disabled = true;
+        makeupSelect.className = makeupSelect.className.replace('bg-white', 'bg-slate-100');
+    } else {
+        makeupSelect.disabled = false;
+        makeupSelect.className = makeupSelect.className.replace('bg-slate-100', 'bg-white');
+    }
+}
+
+        // สลับมุมมอง นักศึกษา <-> Admin
+        function toggleView() {
+            const isStudent = !document.getElementById('studentSection').classList.contains('hidden');
+            if (isStudent) {
+                document.getElementById('studentSection').classList.add('hidden');
+                document.getElementById('adminSection').classList.remove('hidden');
+                document.getElementById('btnToggle').innerText = "⬅ กลับหน้านักศึกษา";
+            } else {
+                document.getElementById('studentSection').classList.remove('hidden');
+                document.getElementById('adminSection').classList.add('hidden');
+                document.getElementById('btnToggle').innerText = "🔒 เข้าสู่ระบบ Admin";
+            }
+        }
+
+        // ส่งคำร้องจากนักศึกษา
+        document.getElementById('makeupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+             if (isSlotExpired(document.getElementById('makeupSlot').value)) {
+        alert("⚠️ รอบที่เลือกเลยเวลาปัจจุบันไปแล้ว กรุณาเลือกรอบชดเชยใหม่");
+        onExperimentChange();   // โหลดรายการรอบใหม่ (ตัดรอบที่หมดเวลาออก)
+        return;
+    }
+            btn.disabled = true;
+            btn.innerText = "กำลังบันทึกข้อมูล กรุณารอสักครู่...";
+
+            const data = {
+                studentId: document.getElementById('studentId').value.trim(),
+                studentName: document.getElementById('studentName').value.trim(),
+                studentEmail: document.getElementById('studentEmail').value.trim(),
+                subject: document.getElementById('subject').value,
+                regularSlot: document.getElementById('regularSlot').value,
+                experimentName: document.getElementById('experimentName').value,
+                absentDate: document.getElementById('absentDate').value,
+                reason: document.getElementById('reason').value.trim(),
+                makeupSlot: document.getElementById('makeupSlot').value
+            };
+
+            const fileInput = document.getElementById('proofFile');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const fileObj = {
+                        name: file.name,
+                        type: file.type,
+                        base64: evt.target.result.split(',')[1]
+                    };
+                    executeSubmit(data, fileObj);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                executeSubmit(data, null);
+            }
+        });
+
+        function executeSubmit(data, fileObj) {
+    const btn = document.getElementById('btnSubmit');
+    const resetBtn = () => {
+        btn.disabled = false;
+        btn.innerText = "ยืนยันการขออนุมัติเรียนชดเชย ตรวจสอบผลได้ทางอีเมล";
+    };
+
+    callApi('submitRequest', { data: data, fileObj: fileObj })
+        .then(function(res) {
+            if (!res.success) {
+                alert("❌ " + res.message);
+                resetBtn();
+                return;
+            }
+            if (res.emailSent) {
+                alert(`✅ ส่งคำร้องเรียบร้อยแล้ว!\n\nระบบได้ส่งอีเมลยืนยันไปที่ ${res.emailAddress} แล้ว\n(หากไม่พบในกล่องข้อความเข้า กรุณาตรวจสอบใน Junk/Spam เมล)`);
+            } else {
+                alert(`⚠️ ยื่นคำร้องสำเร็จแล้ว แต่ระบบส่งอีเมลยืนยันไม่สำเร็จ!\nสาเหตุ: ${res.errorMsg}\n\nกรุณาติดต่อเจ้าหน้าที่ผ่านทาง LINE Official`);
+            }
+            document.getElementById('makeupForm').reset();
+            document.getElementById('idStatus').innerText = "";
+            lastFetchedId = "";
+            onSubjectChange();
+            resetBtn();
+        })
+        .catch(function(err) {
+            alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+            resetBtn();
+        });
+}
+
+        // เข้าสู่ระบบ Admin
+        function loginAdmin() {
+            const u = document.getElementById('adminUser').value.trim();
+            const p = document.getElementById('adminPassword').value.trim();
+            const btn = document.getElementById('btnLogin');
+
+            if (!u || !p) {
+                alert("กรุณากรอกทั้งชื่อผู้ใช้และรหัสผ่าน");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "กำลังตรวจสอบ...";
+
+                        callApi('adminLogin', { username: u, password: p })
+                .then(function(res) {
+                    btn.disabled = false;
+                    btn.innerText = "เข้าสู่ระบบ";
+                    if (res.success) {
+                        adminToken = res.token;
+                        document.getElementById('displayAdminName').innerText = res.adminName;
+                        document.getElementById('adminLoginForm').classList.add('hidden');
+                        document.getElementById('adminDashboard').classList.remove('hidden');
+                        fetchAdminData();
+                    } else {
+                        alert(res.message);
+                    }
+                })
+                .catch(function(err) {
+                    btn.disabled = false;
+                    btn.innerText = "เข้าสู่ระบบ";
+                    alert("ระบบขัดข้อง: " + err.message);
+                });
+        }
+
+        function logoutAdmin() {
+            adminToken = "";
+            document.getElementById('adminUser').value = "";
+            document.getElementById('adminPassword').value = "";
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('adminLoginForm').classList.remove('hidden');
+        }
+
+// ดักจับการกดปุ่ม Enter ที่ช่อง Username
+document.getElementById('adminUser').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        // หากช่อง password ยังว่าง ให้เลื่อนเคอร์เซอร์ไปช่อง password ก่อน
+        const pass = document.getElementById('adminPassword').value;
+        if (!pass) {
+            document.getElementById('adminPassword').focus();
+        } else {
+            loginAdmin(); // ถ้ามีรหัสผ่านแล้ว ให้ Login เลย
+        }
+    }
+});
+
+// ดักจับการกดปุ่ม Enter ที่ช่อง Password -> เข้าสู่ระบบทันที
+document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        loginAdmin();
+    }
+});
+ function fetchAdminData() {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '<tr><td colspan="12" class="text-center p-6 text-slate-400">กำลังดึงข้อมูลล่าสุด...</td></tr>';
+            
+                        callApi('getAdminData', { token: adminToken })
+              .then(function(res) {
+                  if (res.success) {
+                      rawAdminData = res.data;
+
+                      const total = rawAdminData.length;
+                      const pending = rawAdminData.filter(r => r.status === 'รออนุมัติ').length;
+                      const approved = rawAdminData.filter(r => r.status === 'อนุมัติ').length;
+                      const rejected = rawAdminData.filter(r => r.status === 'ไม่อนุมัติ').length;
+
+                      document.getElementById('totalCount').innerText = total;
+                      document.getElementById('pendingCount').innerText = pending;
+                      document.getElementById('approvedCount').innerText = approved;
+                      document.getElementById('rejectedCount').innerText = rejected;
+
+                      filterAdminTable();
+                  } else {
+                      alert("แจ้งเตือน: " + res.message);
+                      tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-rose-500">${res.message}</td></tr>`;
+                  }
+              })
+              .catch(function(err) {
+                  alert("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: " + err.message);
+                  tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-rose-500">โหลดข้อมูลไม่สำเร็จ: ${err.message}</td></tr>`;
+              });
+        }
+
+
+        function filterAdminTable() {
+            const filterStatus = document.getElementById('filterStatus').value;
+            const searchKeyword = document.getElementById('searchBox').value.toLowerCase().trim();
+
+            const filtered = rawAdminData.filter(r => {
+                const matchStatus = (filterStatus === 'ALL') || (r.status === filterStatus);
+                const matchSearch = (r.studentId.toLowerCase().includes(searchKeyword)) || 
+                                    (r.name.toLowerCase().includes(searchKeyword)) ||
+                                    (r.email.toLowerCase().includes(searchKeyword)) || // เพิ่มการค้นหาด้วยอีเมล
+                                    (r.subject.toLowerCase().includes(searchKeyword));
+                return matchStatus && matchSearch;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('adminTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center p-6 text-slate-400">ไม่พบรายการคำร้อง</td></tr>';
+                return;
+            }
+
+            let html = '';
+            // เพิ่ม index เพื่อแสดงเลขลำดับ 1, 2, 3...
+            list.forEach((r, index) => {
+                let badgeColor = "bg-amber-100 text-amber-800";
+                if (r.status === 'อนุมัติ') badgeColor = "bg-emerald-100 text-emerald-800";
+                if (r.status === 'ไม่อนุมัติ') badgeColor = "bg-rose-100 text-rose-800";
+
+                const proofHtml = r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" class="text-blue-500 hover:underline text-xs font-medium">📂 ดูหลักฐาน</a>` : '<span class="text-slate-400 text-xs">ไม่มี</span>';
+
+                let actionButtons = '-';
+                if (r.status === 'รออนุมัติ') {
+                    actionButtons = `
+                        <button onclick="changeStatus('${r.reqId}', 'อนุมัติ')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded shadow transition">อนุมัติ</button>
+                        <button onclick="changeStatus('${r.reqId}', 'ไม่อนุมัติ')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded shadow transition">ไม่อนุมัติ</button>
+                    `;
+                }
+
+                let docBtn = '<span class="text-slate-300 text-xs">-</span>';
+                if (r.status === 'อนุมัติ' || r.status === 'ไม่อนุมัติ') {
+                    docBtn = `<button onclick="viewDocument('${r.reqId}')" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg transition font-medium">📄 ดูใบแสดงผล</button>`;
+                }
+
+                let quizHtml = '<span class="text-slate-400 text-xs">-</span>';
+                if (r.quizStatus === 'รอเพิ่ม') {
+                    quizHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">รอเพิ่ม</span>
+                            <button onclick="confirmAddQuiz('${r.reqId}')" class="text-[11px] bg-purple-600 hover:bg-purple-700 text-white px-2 py-0.5 rounded shadow transition font-medium">
+                                กดเพิ่มแล้ว
+                            </button>
+                        </div>
+                    `;
+                } else if (r.quizStatus === 'เพิ่มแล้ว') {
+                    quizHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">✓ เพิ่มแล้ว</span>';
+                }
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <!-- ลำดับที่ -->
+                        <td class="p-3 text-center text-xs font-semibold text-slate-400">${index + 1}</td>
+                        <td class="p-3 text-xs text-slate-400">${r.timestamp}</td>
+                        <td class="p-3 font-semibold text-slate-800">${r.studentId}</td>
+                        <td class="p-3">
+                            <div class="font-medium text-slate-800">${r.name}</div>
+                            <div class="text-xs text-slate-400">
+                                <a href="mailto:${r.email}" class="hover:underline text-indigo-600">${r.email}</a>
+                            </div>
+                        </td>
+                        <td class="p-3 text-xs">
+                            <span class="font-medium text-slate-700">${r.subject}</span>
+                            <span class="text-amber-700">🔬 ${r.experimentName}</span>
+                        </td>
+                        <td class="p-3 text-indigo-600 font-medium text-xs">${r.makeupSlot}</td>
+                        <td class="p-3">${proofHtml}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold ${badgeColor}">${r.status}</span></td>
+                        <td class="p-3 text-xs">
+                            <span class="font-medium text-slate-700">${r.actionBy}</span>
+                            ${r.actionAt !== '-' ? `<span class="text-slate-400 text-[10px]">${r.actionAt}</span>` : ''}
+                        </td>
+                        <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                            ${actionButtons}
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            ${docBtn}
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            ${quizHtml}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function changeStatus(reqId, newStatus) {
+            let reason = "";
+            if (newStatus === 'ไม่อนุมัติ') {
+                reason = prompt("โปรดระบุสาเหตุที่ไม่อนุมัติ (เพื่อส่งแจ้งนักศึกษาทางอีเมล):", "หลักฐานไม่ครบถ้วน / รอบเรียนเต็ม");
+                if (reason === null) return;
+            } else {
+                if (!confirm(`ยืนยันการ "อนุมัติ" คำร้องนี้หรือไม่? ระบบจะทำการส่งอีเมลบัตรชดเชยให้นักศึกษาทันที`)) return;
+            }
+
+                        callApi('updateStatus', { token: adminToken, reqId: reqId, newStatus: newStatus, reason: reason })
+                .then(function(res) {
+                    if (res.success) {
+                        alert('บันทึกผลและส่งอีเมลแจ้งนักศึกษาเรียบร้อยแล้ว');
+                        fetchAdminData();
+                    } else {
+                        alert(res.message);
+                    }
+                })
+                .catch(function(err) {
+                    alert('เกิดข้อผิดพลาด: ' + err.message);
+                });
+        }
+
+                function confirmAddQuiz(reqId) {
+            if (!confirm('ยืนยันว่าได้แก้ไข DataBase ให้นักศึกษาเรียบร้อยแล้วใช่หรือไม่?')) return;
+
+            callApi('updateQuizStatus', { token: adminToken, reqId: reqId })
+                .then(function(res) {
+                    if (res.success) {
+                        alert('อัปเดตสถานะ DataBase เป็น "เพิ่มแล้ว" สำเร็จ');
+                        fetchAdminData();
+                    } else {
+                        alert(res.message);
+                    }
+                })
+                .catch(function(err) {
+                    alert('เกิดข้อผิดพลาด: ' + err.message);
+                });
+        }
+
+             // ฟังก์ชันสร้างและเปิดดูเอกสารตอบรับ
+        function viewDocument(reqId) {
+            const item = rawAdminData.find(d => d.reqId === reqId);
+            if (!item) return;
+
+            let contentHtml = '';
+
+            if (item.status === 'อนุมัติ') {
+                contentHtml = `
+                    <div id="printArea" style="max-width: 480px; margin: 0 auto; border: 2px solid #10B981; border-radius: 12px; overflow: hidden; font-family: 'Prompt', Arial, sans-serif; background-color: #ffffff;">
+                        <div style="background-color: #10B981; color: white; padding: 15px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ใบยืนยันการเรียนปฏิบัติการฟิสิกส์ชดเชย</h2>
+                            <span style="font-size: 12px; opacity: 0.9;">ภาควิชาฟิสิกส์ คณะวิทยาศาสตร์</span>
+                        </div>
+                        <div style="padding: 20px; background-color: #ffffff; color: #333;">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <span style="background-color: #DEF7EC; color: #03543F; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 13px;">✓ ได้รับการอนุมัติแล้ว</span>
+                            </div>
+                            <table style="width: 100%; font-size: 13px; line-height: 2;">
+                                <tr><td style="color:#666; width:40%;">รหัสนักศึกษา:</td><td><b>${item.studentId}</b></td></tr>
+                                <tr><td style="color:#666;">ชื่อ-นามสกุล:</td><td><b>${item.name}</b></td></tr>
+                                <tr><td style="color:#666;">รายวิชา:</td><td><b>${item.subject}</b></td></tr>
+                                <tr><td style="color:#666;">การทดลองที่ชดเชย:</td><td><b style="color:#b45309;">${item.experimentName}</b></td></tr>
+                                <tr style="background-color: #f0fdf4;"><td style="color:#15803d; font-weight:bold; padding-left: 5px;">รอบที่เรียนชดเชย:</td><td style="color:#15803d; font-weight:bold;">${item.makeupSlot}</td></tr>
+                                <tr><td style="color:#666;">ผู้อนุมัติ:</td><td><span style="color:#0284c7;">${item.actionBy}</span></td></tr>
+                                <tr><td style="color:#666;">เวลาที่อนุมัติ:</td><td><b>${item.actionAt}</b></td></tr>
+                            </table>
+                            <hr style="border: 0.5px dashed #ccc; margin: 15px 0;">
+                            <p style="font-size: 11px; color: #dc2626; text-align: center; margin:0;">* กรุณาบันทึกภาพหน้าจอหรือพิมพ์ใบนี้เพื่อแสดงต่ออาจารย์ผู้สอนก่อนเข้าเรียนชดเชย</p>
+                        </div>
+                    </div>
+                `;
+            } else if (item.status === 'ไม่อนุมัติ') {
+                contentHtml = `
+                    <div id="printArea" style="max-width: 480px; margin: 0 auto; border: 1px solid #fca5a5; border-radius: 12px; overflow: hidden; font-family: 'Prompt', Arial, sans-serif; background-color: #fef2f2;">
+                        <div style="background-color: #ef4444; color: white; padding: 15px; text-align: center;">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: bold;">แจ้งผลการพิจารณาคำร้องขอเรียนชดเชย</h3>
+                            <span style="font-size: 12px; opacity: 0.9;">ภาควิชาฟิสิกส์ คณะวิทยาศาสตร์</span>
+                        </div>
+                        <div style="padding: 20px; color: #1f2937; font-size: 13px;">
+                            <p>เรียน คุณ <b>${item.name}</b> (${item.studentId}),</p>
+                            <p>ตามที่ท่านได้ยื่นคำร้องขอเรียนชดเชยวิชา <b>${item.subject}</b> (${item.experimentName})</p>
+                            <p>ผลการพิจารณา: <b style="color: #dc2626;">"ไม่อนุมัติ"</b></p>
+                            <p>ดำเนินการโดย: <b>${item.actionBy}</b> (${item.actionAt})</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const modalContent = document.getElementById('docModalContent');
+            modalContent.innerHTML = `<div class="text-center py-8 text-slate-400">⏳ กำลังประมวลผลรูปภาพ...</div>`;
+            document.getElementById('docModal').classList.remove('hidden');
+
+            // สร้าง Element ชั่วคราวเพื่อเรนเดอร์เป็นภาพ
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'fixed';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.width = '480px';
+            tempDiv.innerHTML = contentHtml;
+            document.body.appendChild(tempDiv);
+
+            // ใช้ html2canvas แปลงเป็นรูปภาพจริง
+            html2canvas(tempDiv.firstElementChild, {
+                scale: 2,
+                backgroundColor: "#ffffff",
+                useCORS: true
+            }).then(canvas => {
+                const imgUrl = canvas.toDataURL("image/jpeg", 0.95);
+                document.body.removeChild(tempDiv); // ลบตัวชั่วคราวทิ้ง
+
+                // แสดงเป็นแท็ก <img> เพื่อให้กดแตะค้างในมือถือได้
+                modalContent.innerHTML = `
+                    <div class="text-center mb-2">
+                        <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+                            📱 แตะค้างที่รูปภาพเพื่อบันทึกลงมือถือได้ทันที
+                        </span>
+                    </div>
+                    <img id="printArea" src="${imgUrl}" alt="ใบตอบรับ" class="mx-auto rounded-xl shadow border border-slate-200 max-w-full h-auto">
+                `;
+            }).catch(err => {
+                document.body.removeChild(tempDiv);
+                modalContent.innerHTML = contentHtml; // ถ้าเกิดข้อผิดพลาด ให้แสดง HTML แบบเดิม
+            });
+        }
+
+        function closeDocModal() {
+            document.getElementById('docModal').classList.add('hidden');
+        }
+
+                // ฟังก์ชันสั่งพิมพ์ (รองรับทั้งกรณีที่เป็น <img> และ <div>)
+        function printDocModal() {
+            const printElement = document.getElementById('printArea');
+            if (!printElement) return;
+
+            const printContent = printElement.outerHTML;
+            const printWindow = window.open('', '', 'width=650,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>พิมพ์เอกสาร</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+                    <style>
+                        body { 
+                            font-family: 'Prompt', sans-serif; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            padding: 20px; 
+                            margin: 0;
+                        }
+                        img { max-width: 480px; width: 100%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 400);
+        }
+        function saveDocAsJPG() {
+            const printElement = document.getElementById('printArea');
+            if (!printElement) return;
+
+            // ถ้าแปลงเป็นรูป <img> แล้ว ให้ดึง src มาโหลดได้เลย
+            if (printElement.tagName.toLowerCase() === 'img') {
+                const link = document.createElement('a');
+                link.download = `ใบตอบรับชดเชย.jpg`;
+                link.href = printElement.src;
+                link.click();
+                return;
+            }
+
+            // กรณีสำรอง (ถ้ายังเป็น HTML)
+            const btnSave = document.getElementById('btnSaveJpg');
+            const originalText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.innerHTML = "⏳ กำลังสร้างรูปภาพ...";
+
+            html2canvas(printElement, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+                const image = canvas.toDataURL("image/jpeg", 0.95);
+                const link = document.createElement('a');
+                link.download = `ใบตอบรับชดเชย.jpg`;
+                link.href = image;
+                link.click();
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+            });
+        }
+    </script>
+
+        <!-- ================= Modal แสดงใบตอบกลับ ================= -->
+    <div id="docModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fade-in">
+            <!-- Modal Header -->
+            <div class="p-4 bg-slate-100 border-b flex justify-between items-center">
+                <span class="font-semibold text-slate-700 text-sm">📄 ใบแสดงผลการพิจารณา</span>
+                <button onclick="closeDocModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+            </div>
+            
+            <!-- Modal Body (เนื้อหาเอกสารจะถูกใส่ที่นี่) -->
+            <div id="docModalContent" class="p-6 max-h-[75vh] overflow-y-auto">
+            </div>
+
+                        <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t flex flex-wrap justify-end gap-2">
+                <!-- ปุ่มบันทึกเป็นรูปภาพ JPG -->
+                <button onclick="saveDocAsJPG()" id="btnSaveJpg" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-1">
+                    🖼️ บันทึกเป็น JPG
+                </button>
+                <!-- ปุ่มพิมพ์ / PDF เดิม -->
+                <button onclick="printDocModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-1">
+                    🖨️ พิมพ์ / บันทึก PDF
+                </button>
+                <button onclick="closeDocModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg transition">
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
